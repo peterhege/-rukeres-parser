@@ -17,7 +17,7 @@ for_rating = {
     'battery_capacity': {'w': 1, 't': True},
     'battery_wire_performance': {'w': 1, 't': True},
 }
-units = {'t': True / 1000, 'g': 1, 'm': 1000, 'k': 1000 ** 2}
+units = {'t': 1 / 1000, 'g': 1, 'm': 1000, 'k': 1000 ** 2}
 
 
 def parse(data: dict) -> dict:

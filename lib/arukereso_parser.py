@@ -10,7 +10,7 @@ from functools import reduce
 from typing import Union, List, Dict
 from lxml import html
 
-from lib.parser import phone
+from lib.parser import phone, router
 from lib.property_dictionaries import translate, missing_keys, DEFAULT_DICT, dictionaries, dict_values
 
 if not os.path.exists('cache'):
@@ -19,13 +19,14 @@ if not os.path.exists('results'):
     os.mkdir('results')
 
 PARSERS = {
-    'Mobiltelefon': {'parser': phone, 'dict': 'phone'}
+    'Mobiltelefon': {'parser': phone, 'dict': 'phone'},
+    'Router': {'parser': router, 'dict': 'router'},
 }
 
 cache = {}
 result = {}
 for_ratings = {}
-
+parsed_count = 0
 
 if os.path.exists('cache/cache.json'):
     with open('cache/cache.json', 'r', encoding='utf-8') as f:
@@ -43,7 +44,7 @@ def parse(list_urls: Union[str, list]):
         print('{}: {}'.format(type(e), e))
 
     if type(list_urls) == str:
-        list_urls = get_pages(tree)
+        list_urls = get_pages(tree, list_urls)
 
     if list_urls:
         parse(list_urls)
@@ -70,7 +71,7 @@ def parse_products(product_urls: List[str]):
         'shop_rating': {'w': 1, 't': True},
         'shop_rating_count': {'w': 1, 't': True},
         'shop_well': {'w': 1, 't': True},
-        'price': {'w': 1, 't': False},
+        'price': {'w': 2, 't': False},
         'shipping': {'w': 1, 't': False},
     }
     for product_url in product_urls:
@@ -97,6 +98,8 @@ def parse_products(product_urls: List[str]):
 
         except Exception as e:
             print('{}: {}'.format(type(e), e))
+        global parsed_count
+        parsed_count += 1
 
 
 def set_min_max(data: dict, category: str):
@@ -110,7 +113,7 @@ def set_min_max(data: dict, category: str):
 
 
 def parse_product(product_url: str) -> dict:
-    print('Parse:', product_url)
+    print(parsed_count, 'Parse:', product_url)
     cache_key = hashlib.md5(product_url.encode('utf-8')).hexdigest()
     if cache_key in cache and (time.time() - cache[cache_key]['last']) < 24 * 3600:
         return cache[cache_key]['data']
@@ -140,11 +143,14 @@ def parse_product(product_url: str) -> dict:
     product_properties = tree.xpath('//table[contains(@class,"property-sheet")]')  # type: html.HtmlElement
     if not len(product_properties):
         product_properties = tree.xpath('//table[contains(@class,"product-properties")]')
-    product_properties = reduce(
-        lambda a, b: a.xpath('.//tr') + b.xpath('.//tr'),
-        product_properties
-    )  # type: List[html.HtmlElement]
-    product_properties = reduce(properties_reduce, product_properties)  # type: dict
+    try:
+        product_properties = reduce(
+            lambda a, b: a.xpath('.//tr') + b.xpath('.//tr'),
+            product_properties
+        )  # type: List[html.HtmlElement]
+        product_properties = reduce(properties_reduce, product_properties)  # type: dict
+    except:
+        product_properties = {}  # type: dict
 
     if data['category'] in PARSERS:
         data = translate(product_properties, data, PARSERS[data['category']]['dict'])
@@ -218,7 +224,8 @@ def parse_property_tr(tr: html.HtmlElement, properties: dict) -> dict:
 def save_result(category: str, products: list, dir_name: str):
     file_name = 'unknown'
     property_dict = DEFAULT_DICT
-    os.mkdir('results/{}'.format(dir_name))
+    if not os.path.exists('results/{}'.format(dir_name)):
+        os.mkdir('results/{}'.format(dir_name))
 
     if category in PARSERS:
         file_name = PARSERS[category]['dict']
@@ -259,13 +266,9 @@ def calculate(data: dict, for_rating: dict) -> float:
             value = 1 - value
 
         # if value == 0 and '{} {}'.format(key, data['url']) not in [
-        #     'rating https://www.arukereso.hu/mobiltelefon-c3277/xiaomi/redmi-note-11-128gb-4gb-ram-dual-p763881576/',
-        #     'rating_count https://www.arukereso.hu/mobiltelefon-c3277/xiaomi/redmi-note-11-128gb-4gb-ram-dual-p763881576/',
-        #     'shop_well https://www.arukereso.hu/mobiltelefon-c3277/xiaomi/redmi-note-11-128gb-4gb-ram-dual-p763881576/',
-        #     'rating_count_3 https://www.arukereso.hu/mobiltelefon-c3277/xiaomi/redmi-note-10-5g-64gb-4gb-ram-dual-p665366232/',
-        #     'shop_rating https://www.arukereso.hu/mobiltelefon-c3277/xiaomi/redmi-note-10-5g-64gb-4gb-ram-dual-p665366232/',
-        #     'shop_rating_count https://www.arukereso.hu/mobiltelefon-c3277/xiaomi/redmi-note-10-5g-64gb-4gb-ram-dual-p665366232/'
-        # ] and key not in ['shop_well', 'shipping', 'screen_technology_for_rating']:
+        #     'lan_port_count https://www.arukereso.hu/router-c3144/zyxel/lte3301-plus-eu01v1f-p510186888/',
+        #     'frequency https://www.arukereso.hu/router-c3144/zyxel/lte3301-m209-p399170965/'
+        # ] and key not in []:
         #     print(key, data['url'], data[key], info['min'], info['max'])
         #     exit()
 
@@ -286,11 +289,14 @@ def get_tree(page_url) -> html.HtmlElement:
     return html.fromstring(page.content)
 
 
-def get_pages(tree: html.HtmlElement) -> List[str]:
+def get_pages(tree: html.HtmlElement, base_url: str) -> List[str]:
+    base_url = '{base}{separator}start='.format(base=base_url, separator='&' if re.search(r'\?', base_url) else '?')
     try:
-        pagination = tree.xpath('//*[contains(@class,"pagination")]')[0]  # type: html.HtmlElement
-        pages = pagination.xpath('./a/@href')
-        return pages
+        pagination = tree.xpath('//*[contains(@class,"pagination")]')  # type: List[html.HtmlElement]
+        if not pagination:
+            return []
+        pages = pagination[0].xpath('./p/text()')
+        return ['{}{}'.format(base_url, page * 25) for page in range(1, int(re.search(r'[0-9]+$', pages[0]).group(0)))]
     except Exception as e:
         print('{}: {}'.format(type(e), e))
         return []

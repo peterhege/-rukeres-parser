@@ -81,7 +81,15 @@ PHONE_DICT = {
     'radio_fm': 'FM rádió'
 }
 
-dictionaries = {'phone': PHONE_DICT}
+ROUTER_DICT = {
+    "has_wifi": "Vezeték nélküli", "has_usb": "USB csatlakozó", "lan_port_count": "LAN portok száma",
+    "lan_speed": "LAN sebesség", "wan_port_count": "WAN portok száma", "wan_speed": "WAN sebesség",
+    "wifi_speed": "Wi-Fi sebesség", "frequency": "Működési frekvencia", "antenna_count": "Antennák száma",
+    "wifi_standards": "Vezeték nélküli szabványok", "wep_encryption": "WEP titkosítás",
+    "security_options": "Biztonsági lehetőségek"
+}
+
+dictionaries = {'phone': PHONE_DICT, 'router': ROUTER_DICT}
 
 
 def dict_flip(d: dict) -> dict:
