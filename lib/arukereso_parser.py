@@ -62,7 +62,7 @@ def parse(list_urls: Union[str, list]):
 def parse_products(product_urls: List[str]):
     for_rating = {
         'rating': {'w': 1, 't': True},
-        'rating_count': {'w': 1, 't': True},
+        'rating_count': {'w': 2, 't': True},
         'rating_count_1': {'w': 3, 't': False},
         'rating_count_2': {'w': 2, 't': False},
         'rating_count_3': {'w': 1, 't': True},
