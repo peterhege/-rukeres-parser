@@ -10,7 +10,7 @@ from functools import reduce
 from typing import Union, List, Dict
 from lxml import html
 
-from lib.parser import phone, router
+from lib.parser import phone, router, printer
 from lib.property_dictionaries import translate, missing_keys, DEFAULT_DICT, dictionaries, dict_values
 
 if not os.path.exists('cache'):
@@ -21,6 +21,7 @@ if not os.path.exists('results'):
 PARSERS = {
     'Mobiltelefon': {'parser': phone, 'dict': 'phone'},
     'Router': {'parser': router, 'dict': 'router'},
+    'Nyomtató': {'parser': printer, 'dict': 'printer'}
 }
 
 cache = {}
@@ -41,7 +42,8 @@ def parse(list_urls: Union[str, list]):
         product_urls = tree.xpath('//*[contains(@class,"product-box-container")]//h2/a/@href')
         parse_products(product_urls)
     except Exception as e:
-        print('{}: {}'.format(type(e), e))
+        print('1 {}: {}'.format(type(e), e))
+        raise e
 
     if type(list_urls) == str:
         list_urls = get_pages(tree, list_urls)
@@ -97,7 +99,8 @@ def parse_products(product_urls: List[str]):
                 result[category].append(data.copy())
 
         except Exception as e:
-            print('{}: {}'.format(type(e), e))
+            print('2 {}: {}'.format(type(e), e))
+            raise e
         global parsed_count
         parsed_count += 1
 
@@ -194,6 +197,7 @@ def parse_product(product_url: str) -> dict:
         data['prices'].append(price_data)
 
     cache[cache_key] = {'data': data, 'last': time.time()}
+
     return data
 
 
@@ -216,7 +220,7 @@ def parse_property_tr(tr: html.HtmlElement, properties: dict) -> dict:
         elif len(false_value):
             properties[texts[0]] = False
     except Exception as e:
-        print('{}: {}'.format(type(e), e))
+        print('3 {}: {}'.format(type(e), e))
 
     return properties
 
@@ -298,5 +302,5 @@ def get_pages(tree: html.HtmlElement, base_url: str) -> List[str]:
         pages = pagination[0].xpath('./p/text()')
         return ['{}{}'.format(base_url, page * 25) for page in range(1, int(re.search(r'[0-9]+$', pages[0]).group(0)))]
     except Exception as e:
-        print('{}: {}'.format(type(e), e))
+        print('4 {}: {}'.format(type(e), e))
         return []

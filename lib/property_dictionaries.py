@@ -89,7 +89,20 @@ ROUTER_DICT = {
     "security_options": "Biztonsági lehetőségek"
 }
 
-dictionaries = {'phone': PHONE_DICT, 'router': ROUTER_DICT}
+PRINTER_DICT = {
+    "type": "Nyomtató típusa", "is_colorful": "Színes nyomtató", "double_side": "Kétoldalas nyomtatás",
+    "disk_printer": "CD/DVD nyomtatás",
+    "pict_bridge": "Közvetlen nyomtatás (PictBridge)", "wifi_direct": "Wi-Fi Direct",
+    "max_page_size": "Maximális papírméret",
+    "resolution": "Felbontás (fekete-fehér)", "resolution_colorful": "Felbontás (színes)",
+    "speed": "Nyomtatási sebesség (fekete-fehér, A4 méretben)",
+    "speed_colorful": "Nyomtatási sebesség (színes, A4 méretben)", "has_usb": "USB", "parallel_port": "Párhuzamos port",
+    "serial_prot": "Soros port", "fire_wire": "FireWire", "ethernet": "Ethernet", "wifi": "Wi-Fi", "width": "Szélesség",
+    "height": "Magasság", "depth": "Mélység", "weight": "Tömeg", "capacity": "Lapadagoló kapacitása",
+    "card_reader": "Kártyaolvasó", "noise": "Nyomtatási zajszint"
+}
+
+dictionaries = {'phone': PHONE_DICT, 'router': ROUTER_DICT, 'printer': PRINTER_DICT}
 
 
 def dict_flip(d: dict) -> dict:
